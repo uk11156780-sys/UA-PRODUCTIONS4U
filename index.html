@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Store</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0813">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f6f4fb;--card:#fff;--tx:#1b1530;--mut:#6f6888;--bd:#e0daf0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0813;--card:#15101f;--tx:#f1ecfa;--mut:#a59cc0;--bd:#2a2140}}
+:root[data-theme="dark"]{--bg:#0b0813;--card:#15101f;--tx:#f1ecfa;--mut:#a59cc0;--bd:#2a2140}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:720px;margin:auto;padding:16px}
+h1{font-size:1.8rem;margin:8px 0;text-align:center;color:var(--ac);text-shadow:0 0 6px color-mix(in srgb,var(--ac) 45%,transparent)}
+h2{font-size:1.15rem;margin:26px 0 8px;color:var(--tx);border-left:3px solid var(--ac);padding-left:8px}
+.sub{text-align:center;color:var(--mut);margin-bottom:8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin:8px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.price{font-weight:700;color:var(--ac);font-size:1.15rem}
+button{background:transparent;color:var(--ac);border:1.5px solid var(--ac);border-radius:9px;padding:8px 15px;font-weight:600;cursor:pointer}
+button:hover{background:var(--ac);color:#fff}
+button.g{color:var(--mut);border-color:var(--bd)}button.g:hover{background:var(--bd);color:var(--tx)}
+input,textarea{width:100%;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:9px;margin:4px 0;font:inherit}
+input[type=checkbox]{width:auto;margin-right:8px}input[type=color]{height:40px;padding:2px}
+.stars span{font-size:1.5rem;cursor:pointer;color:var(--bd)}.stars .on{color:#f5b301}
+.tiny{font-size:.8rem;color:var(--mut)}
+.pack{display:flex;gap:6px;align-items:center}.pack input{margin:2px}
+#dev{display:none;position:fixed;inset:0;overflow:auto;background:var(--bg);z-index:5;padding-top:env(safe-area-inset-top,0px)}
+.top{display:flex;justify-content:flex-end;padding-top:4px}
+</style></head><body>
+<div id="app"></div><div id="dev"></div>
+<script id="state" type="application/json">{"brand":"MY STORE","tag":"Panels • Free Fire Top-Up • Fast Delivery","ig":"brzxxt_edits","ac":"#00a6c8","panelOn":true,"fbOn":true,"topOn":true,"panel":{"name":"Free Fire Panel","price":200},"topups":[{"d":100,"p":80},{"d":310,"p":250},{"d":520,"p":400},{"d":1060,"p":800},{"d":2180,"p":1600},{"d":5600,"p":4000}]}</script>
+<script>
+let S=JSON.parse(document.getElementById('state').textContent);
+let artifact=null,user=null,db=null,isOwner=false,unlocked=false,fb=[],rating=5;
+const PW='d8c243f0e8e5ed71232ced1ac01415faeac35de70511795fe5a39332c05bdcdb';
+async function sha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+async function askPw(){const p=prompt('Enter manager password');if(p===null)return;let h='';try{h=await sha(p)}catch(e){}if(h===PW){unlocked=true;renderFb();openDev()}else alert('Wrong password')}
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function saveOrder(text){try{if(!db)return;const t=Date.now();await db.collection('orders').doc('o'+t+Math.floor(Math.random()*1e4)).set({text,t})}catch(e){}}
+async function loadOrders(){const el=$('#d_o');try{if(!db)throw 0;const s=await db.collection('orders').orderBy('t','desc').limit(50).get();const rows=s.docs.map(d=>({...d.data(),id:d.id}));el.innerHTML=rows.length?rows.map(o=>`<div class="card"><div class="tiny">${new Date(o.t).toLocaleString()}</div>${esc(o.text)}<br><button class="g" data-oid="${o.id}">Delete</button></div>`).join(''):'<div class="tiny">No orders yet.</div>';el.querySelectorAll('[data-oid]').forEach(b=>b.onclick=async()=>{try{await db.collection('orders').doc(b.dataset.oid).delete()}catch(e){}loadOrders()})}catch(e){el.innerHTML='<div class="tiny">Orders could not be loaded. Open this page while signed in to your Claude account.</div>'}}
+function igOrder(text){saveOrder(text);
+  try{navigator.clipboard.writeText(text)}catch(e){}
+  const u=encodeURIComponent(S.ig),o=document.createElement('div');
+  o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9';
+  o.innerHTML=`<div class="card" style="max-width:420px;width:100%"><b>Order message copied</b><div class="card" style="word-break:break-word">${esc(text)}</div><div class="tiny">Open Instagram, paste this message and send it to @${esc(S.ig)}.</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><a href="https://ig.me/m/${u}" target="_blank" rel="noopener"><button>Open Instagram DM</button></a><a href="https://www.instagram.com/${u}/" target="_blank" rel="noopener"><button class="g">Open Profile</button></a><button class="g" id="ox">Close</button></div></div>`;
+  document.body.appendChild(o);o.querySelector('#ox').onclick=()=>o.remove();
+}
+function render(){
+  document.documentElement.style.setProperty('--ac',S.ac);
+  $('#app').innerHTML=`<main>
+  <div class="top"><button id="devbtn" class="g">⚙ Developer</button></div>
+  <h1>${esc(S.brand)}</h1><div class="sub">${esc(S.tag)}<br><a href="https://www.instagram.com/${encodeURIComponent(S.ig)}/" target="_blank" rel="noopener" style="color:var(--ac)">Instagram: @${esc(S.ig)}</a></div>
+  ${S.panelOn?`<h2>Panel</h2>
+  <div class="card row"><div><b>${esc(S.panel.name)}</b><div class="tiny">Order via Instagram</div></div>
+  <div><span class="price">${esc(S.panel.price)}</span> <button id="buyp">Buy</button></div></div>`:''}
+  ${S.topOn?`<h2>Free Fire Diamond Top-Up</h2>
+  <div class="card"><input id="uid" placeholder="Free Fire Player ID" inputmode="numeric">
+  <div class="tiny">Enter your ID first, then tap Top-Up on a pack.</div></div>
+  ${S.topups.map((t,i)=>`<div class="card row"><b>💎 ${esc(t.d)} Diamonds</b><div><span class="price">${esc(t.p)}</span> <button data-i="${i}" class="tu">Top-Up</button></div></div>`).join('')}`:''}
+  ${S.fbOn?`<h2>Feedback</h2>
+  <div class="card"><input id="fn" placeholder="Name"><div class="stars" id="st"></div>
+  <textarea id="fm" rows="3" placeholder="Write your feedback"></textarea><button id="fs">Send Feedback</button></div>
+  <div id="fl"></div>`:''}
+  <p class="tiny" style="text-align:center">© ${esc(S.brand)}</p></main>`;
+  if(S.fbOn){stars();renderFb();$('#fs').onclick=sendFb}
+  if(S.panelOn)$('#buyp').onclick=()=>igOrder(`Hi! I want to buy "${S.panel.name}" (rate: ${S.panel.price}).`);
+  document.querySelectorAll('.tu').forEach(b=>b.onclick=()=>{const t=S.topups[b.dataset.i],id=$('#uid').value.trim();
+    if(!id)return alert('Please enter your Free Fire Player ID first');
+    igOrder(`Top-Up order: ${t.d} Diamonds (rate: ${t.p}) | Player ID: ${id}`)});
+  $('#devbtn').onclick=askPw;
+}
+function stars(){$('#st').innerHTML=[1,2,3,4,5].map(n=>`<span data-n="${n}" class="${n<=rating?'on':''}">★</span>`).join('');
+  document.querySelectorAll('#st span').forEach(s=>s.onclick=()=>{rating=+s.dataset.n;stars()})}
+function renderFb(){const el=$('#fl');if(!el)return;
+  el.innerHTML=fb.length?fb.map((f,i)=>`<div class="card"><div class="row"><span><b>${esc(f.name)}</b> <span style="color:#f5b301">${'★'.repeat(f.r)}</span></span>${unlocked?`<button class="g" data-del="${i}">Delete</button>`:''}</div><div>${esc(f.msg)}</div></div>`).join(''):'<div class="tiny">No feedback yet.</div>';
+  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{const f=fb[b.dataset.del];fb.splice(b.dataset.del,1);renderFb();
+    try{if(db&&f.id)await db.collection('feedback').doc(f.id).delete()}catch(e){}})}
+async function sendFb(){const name=$('#fn').value.trim()||'Guest',msg=$('#fm').value.trim();if(!msg)return;
+  const f={name,msg,r:rating,t:Date.now()};f.id='f'+f.t+Math.floor(Math.random()*1e4);fb.unshift(f);renderFb();$('#fm').value='';
+  try{if(db)await db.collection('feedback').doc(f.id).set(f)}catch(e){}}
+async function loadFb(){try{if(!db)return;const s=await db.collection('feedback').orderBy('t','desc').limit(50).get();
+  fb=s.docs.map(d=>({...d.data(),id:d.id}));renderFb()}catch(e){}}
+function openDev(){const d=$('#dev');d.style.display='block';const T=S.topups.map(t=>({...t}));
+  d.innerHTML=`<main><h2>Developer Panel</h2>
+  <div class="card"><b>Website</b><br>
+  <label class="tiny">Store name</label><input id="d_b" value="${esc(S.brand)}">
+  <label class="tiny">Tagline</label><input id="d_tg" value="${esc(S.tag)}">
+  <label class="tiny">Instagram username (without @)</label><input id="d_ig" value="${esc(S.ig)}">
+  <label class="tiny">Accent color</label><input id="d_ac" type="color" value="${esc(S.ac)}"></div>
+  <div class="card"><b>Sections on/off</b><br>
+  <label><input type="checkbox" id="o_p" ${S.panelOn?'checked':''}>Panel section</label><br>
+  <label><input type="checkbox" id="o_t" ${S.topOn?'checked':''}>Top-Up section</label><br>
+  <label><input type="checkbox" id="o_f" ${S.fbOn?'checked':''}>Feedback section</label></div>
+  <div class="card"><b>Panel</b><br><label class="tiny">Name</label><input id="d_pn" value="${esc(S.panel.name)}">
+  <label class="tiny">Rate</label><input id="d_pp" type="number" value="${esc(S.panel.price)}"></div>
+  <div class="card"><b>Top-Up rates</b> <span class="tiny">(diamonds | rate)</span><div id="d_t"></div><button class="g" id="d_add">+ Add pack</button></div>
+  <div class="card"><b>Orders inbox</b> <button class="g" id="d_ref">Refresh</button><div id="d_o"></div></div>
+  <p class="tiny">After unlocking, a Delete button appears next to each feedback on the site.</p>
+  <div class="row"><button id="d_save">Save & Publish</button><button class="g" id="d_x">Close</button></div></main>`;
+  const draw=()=>{$('#d_t').innerHTML=T.map((t,i)=>`<div class="pack"><input data-k="d" data-i="${i}" type="number" value="${t.d}"><input data-k="p" data-i="${i}" type="number" value="${t.p}"><button class="g" data-r="${i}">✕</button></div>`).join('');
+    document.querySelectorAll('#d_t input').forEach(x=>x.oninput=()=>{T[x.dataset.i][x.dataset.k]=+x.value});
+    document.querySelectorAll('#d_t [data-r]').forEach(x=>x.onclick=()=>{T.splice(x.dataset.r,1);draw()})};
+  draw();loadOrders();$('#d_ref').onclick=loadOrders;
+  $('#d_add').onclick=()=>{T.push({d:0,p:0});draw()};
+  $('#d_x').onclick=()=>d.style.display='none';
+  $('#d_save').onclick=async()=>{
+    S={brand:$('#d_b').value,tag:$('#d_tg').value,ig:$('#d_ig').value.replace('@','').trim(),ac:$('#d_ac').value,panelOn:$('#o_p').checked,topOn:$('#o_t').checked,fbOn:$('#o_f').checked,panel:{name:$('#d_pn').value,price:+$('#d_pp').value},topups:T};
+    const c=document.documentElement.cloneNode(true);c.querySelector('#app').innerHTML='';c.querySelector('#dev').innerHTML='';c.querySelector('#dev').removeAttribute('style');c.removeAttribute('style');
+    c.querySelector('#state').textContent=JSON.stringify(S);
+    try{await artifact.publish('<!DOCTYPE html>\n'+c.outerHTML)}catch(e){render();d.style.display='none';alert('Save fail: '+(e.message||e.code))}};
+}
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+render();
+(async()=>{try{artifact=await claude.use('artifact');user=await claude.use('user');isOwner=!!(user&&user.isOwner());db=await claude.use('db')}catch(e){}
+  if(isOwner)render();loadFb()})();
+</script></body></html>
